@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link href="../Content/ext-4.2.1.883/resources/css/ext-all-neptune.css" rel="stylesheet" />
+    <script src="Content/ext-4.2.1.883/ext-all-debug.js"></script>
+    <link rel="stylesheet" href="../Content/Styles/site-cssc-relative.css">
+
+    <script type="text/javascript">
+
+        //        var sessionsPanel = Ext.create('Ext.Panel', {
+        //            html: '<b>Sessions Panel</b>',
+        //            flex: 2
+        //        });
+        //
+        //        var detailsPanel = Ext.create('Ext.Panel', {
+        //            html: '<b>Details Panel</b>',
+        //            flex: 3
+        //        });
+        //
+        //        var speakersPanel = Ext.create('Ext.Panel', {
+        //            html: '<b>Speakers Panel</b>',
+        //            flex: 1
+        //        });
+        //
+        //        var combineSessionsSpeaker = Ext.create('Ext.Panel', {
+        //            layout: {
+        //                type: 'vbox',
+        //                align: 'stretch'
+        //            },
+        //            items: [sessionsPanel, speakersPanel]
+        //        });
+
+        Ext.Loader.setConfig({
+            enable: true
+        });
+
+        Ext.application({
+            name: 'MyApp',
+            launch: function () {
+
+                Ext.define('SessionForm', {
+                    extend: 'Ext.window.Window',
+                    alias: 'widget.sessionForm',
+                    padding: 5,
+                    width: 600,
+                    title: 'Edit Sessions',
+                    model: true,
+                    items: [
+                        {
+                            xtype: 'form',
+                            bodyPadding: 10,
+                            title: '',
+                            defaults: {
+                                labelWidth: 90,
+                                margin: '0 0 10 0',
+                                anchor: '90%'
+                            },
+                            items: [
+                                {
+                                    xtype: 'textfield',
+                                    name: 'title',
+                                    fieldLabel: 'Title',
+                                    allowBlank: false
+                                },
+                                {
+                                    xtype: 'checkboxfield',
+                                    name: 'approved',
+                                    fieldLabel: 'Approved'
+                                },
+                                {
+                                    xtype: 'container',
+                                    padding: '10 10 10 10',
+                                    layout: {
+                                        type: 'hbox',
+                                        align: 'middle',
+                                        pack: 'center'
+                                    },
+                                    items: [
+                                        {
+                                            xtype: 'button',
+                                            text: 'Save',
+                                            formBind: true,
+                                            margin: '5 5 5 5',
+                                            handler: function (button) {
+                                                var form = button.up().up().down('form');
+                                                form.updateRecord();
+                                                button.up('window').destroy();
+                                            }
+                                        },
+                                        {
+                                            xtype: 'button',
+                                            text: 'Cancel',
+                                            margin: '5 5 5 5',
+                                            handler: function (button) {
+                                                button.up('window').destroy();
+                                            }
+                                        }
+                                    ]
+
+                                }
+                            ]
+                        }
+                    ]
+                });
+
+                Ext.define('sessionGridPanel', {
+                    extend: 'Ext.grid.Panel',
+                    alias: 'widget.sessionGridPanel',
+                    listeners: {
+                        itemdblclick: function (gridpanel, record, item, e) {
+                            var formWindow = Ext.create('SessionForm');
+
+                            var form = formWindow.down('form');
+                            form.loadRecord(record);
+                            formWindow.show();
+                        }
+                    },
+                    store: {
+                        fields: [
+                            'id',
+                            'approved',
+                            {
+                                name: 'title',
+                                sortType: 'asUCText'
+                            },
+                            {
+                                dateFormat: 'c',
+                                name: 'sessionTimeDateTime',
+                                sortType: 'asDate',
+                                type: 'date'
+                            },
+                            {
+                                convert: function(v, rec) {
+                                    var convertIt = Ext.util.Format.dateRenderer('m/d/Y g:i a'),
+                                        pretty = convertIt(rec.get("sessionTimeDateTime"));
+                                    return pretty;
+                                },
+                                name: 'sessionTimePretty',
+                                type: 'string'
+                            }
+                        ],
+                        autoLoad: true,
+                        autoSync: true,
+                        proxy: {
+                            type: 'rest',
+                            url: '/Trainning/ConferenceEditorApp/data/Ext/sessions.json',
+                            reader: {
+                                type: 'json',
+                                root: 'data'
+                            }
+                        },
+                        sorters: [
+                            {property: 'title'}
+                        ],
+                        groupField: 'sessionTimeDateTime'
+                    },
+                    columns: [
+                        {
+                            xtype: 'gridcolumn',
+                            dataIndex: 'id',
+                            text: 'Id'
+                        }, {
+                            xtype: 'gridcolumn',
+                            dataIndex: 'title',
+                            text: 'Title',
+                            flex: 1,
+                            minWidth: 100,
+                            width: 75
+                        }, {
+                            xtype: 'gridcolumn',
+                            dataIndex: 'approved',
+                            text: 'Approved'
+                        }, {
+                            dataIndex: 'sessionTimePretty',
+                            text: 'session Start Time',
+                            width: 180
+                        }
+                    ],
+                    features: [
+                        {
+                            ftype: 'grouping',
+                            groupHeaderTpl: [
+                                '{[values.rows[0].get(\'sessionTimePretty\')]} (Session Count: {rows.length})'
+                            ]
+                        }
+                    ]
+                });
+
+                Ext.create('Ext.container.Viewport', {
+                    layout: {
+                        type: 'fit'
+//                        align: 'stretch'
+                    },
+//                    items: [combineSessionsSpeaker, detailsPanel]
+                    items: [
+                        {
+                            xtype: 'panel',
+                            resizable: false,
+                            collapsed: false,
+                            layout: 'border',
+                            items: [
+                                {
+                                    xtype: 'container',
+                                    region: 'center',
+                                    layout: {
+                                        type: 'vbox',
+                                        align: 'stretch'
+                                    },
+//                                    flex: 1,
+//                            split: true,
+                                    items: [
+                                        {
+                                            xtype: 'sessionGridPanel',
+                                            flex: 3
+                                        }, {
+                                            xtype: 'splitter',
+                                        }, {
+                                            html: '<b>Presenters</b>',
+                                            flex: 2
+                                        }]
+                                },  {
+                                    region: 'east',
+                                    html: '<b>Details Panel</b>',
+                                    flex: 2,
+                                    split: true,
+//                                    title: 'Details Panel',
+//                                    collapseDirection: 'right',
+//                                    collapsible: true,
+//                                    collapsed: true
+                                }
+                            ]
+                        }
+                    ]
+                });
+            }
+        })
+    </script>
+</head>
+<body>
+
+</body>
+</html>
