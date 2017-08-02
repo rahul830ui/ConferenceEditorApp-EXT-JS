@@ -31,7 +31,7 @@ Ext.define('SE.model.SessionPresenter', {
 
     proxy: {
         type: 'rest',
-        url: '/data/Ext/sessionpresenters.json',
+        url: '/ConferenceEditorApp-EXT-JS/data/Ext/sessionpresenters.json',
         reader: {
             type: 'json',
             root: 'data'
